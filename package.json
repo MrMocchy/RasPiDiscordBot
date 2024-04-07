@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "main": "node --env-file=.env main.js"
+  },
+  "devDependencies": {
+    "discord.js": "^14.14.1"
+  }
+}
