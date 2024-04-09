@@ -1,16 +1,19 @@
 
+import Discord from "discord.js"
 
-const Discord = require("discord.js")
+const {get_all_messages} = require("./bot_utils")
 
-const { get_all_messages } = require("./bot_utils.js")
-
-class ForumStatistics {
-
-    constructor(token, channelIds, botchannelId) {
+export class ForumStatistics {
+    token: string;
+    forumChannelIds: string[];
+    botchannelId: string;
+    client: Discord.Client;
+    
+    constructor(token: string, forumChannelIds: string[], botChannelId:string) {
 
         this.token = token;
-        this.channelIds = channelIds;
-        this.botchannelId = botchannelId;
+        this.forumChannelIds = forumChannelIds;
+        this.botchannelId = botChannelId;
 
         this.client = new Discord.Client({ intents: [Discord.GatewayIntentBits.Guilds] })
 
@@ -29,22 +32,22 @@ class ForumStatistics {
     }
 
 
-    count_letters(messages) {
-        return messages.reduce((acc, message) => acc + message.content.length, 0)
+    count_letters(messages: Discord.Message[]) {
+        return messages.reduce((acc:number, message:Discord.Message) => acc + message.content.length, 0)
     }
 
-    async create_statistics() {
-        const channels = this.client.channels.cache.filter(channel => this.channelIds.includes(channel.id));
+    async create_statistics(): Promise<Record<string, Record<string, Record<string, Record<string, number>>>>>{
+        const channels = this.client.channels.cache.filter(channel => this.forumChannelIds.includes(channel.id)).map(c => c) as Discord.ForumChannel[]
 
-        const data = {}
+        const data: Record<string, Record<string, Record<string, Record<string, number>>>> = {}
 
-        for (const [channelId, channel] of channels) {
-            const channelData = {}
+        for (const channel of channels) {
+            const channelData: Record<string, Record<string, Record<string, number>>> = {}
             for (const [snowflake, thread] of channel.threads.cache) {
-                const allMessages = await get_all_messages(thread)
+                const allMessages:Discord.Message[] = await get_all_messages(thread)
                 const weekMessages = allMessages.filter(message => message.createdTimestamp > Date.now() - 7 * 24 * 60 * 60 * 1000)
-
-                const threadData = {
+                
+                const threadData: Record < string, Record < string, number >> = {
                     counts: {
                         all: allMessages.length,
                         week: weekMessages.length
@@ -63,7 +66,7 @@ class ForumStatistics {
         return data
     }
 
-    create_embed(data) {
+    create_embed(data: Record<string,Record<string, Record<string, Record<string, number>>>>) {
         const embed = new Discord.EmbedBuilder()
             .setTitle("📊Forum Statistics📊")
             .setColor("#0000ff")
@@ -81,9 +84,10 @@ class ForumStatistics {
         return embed
     }
 
-    async send_embed(embed) {
-        const channel = await this.client.channels.cache.get(this.botchannelId)
-        await channel.send({ embeds: [embed] })
+    async send_embed(embed:Discord.EmbedBuilder) {
+        const channel = await this.client.channels.cache.get(this.botchannelId) as Discord.BaseGuildTextChannel
+        console.dir(embed, { depth: null });
+        // await channel.send({ embeds: [embed] })
     }
 
     run() {
@@ -92,4 +96,3 @@ class ForumStatistics {
 
 }
 
-module.exports = { ForumStatistics }

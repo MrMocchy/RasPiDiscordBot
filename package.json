@@ -1,8 +1,16 @@
 {
   "scripts": {
-    "main": "node --env-file=.env main.js"
+    "test": "ts-node src/main.ts",
+    "start": "node --env-file=.env build/main.js",
+    "compile": "tsc -p .",
+    "run": "npm run compile && npm start"
   },
   "devDependencies": {
-    "discord.js": "^14.14.1"
+    "@types/node": "^20.12.5",
+    "discord.js": "^14.14.1",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "typescript": "^5.4.4"
   }
 }
