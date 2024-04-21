@@ -3,9 +3,20 @@ import Discord from "discord.js"
 import fs from "fs"
 
 const schedule = require("node-schedule")
-const {get_all_messages} = require("./bot_utils")
 
-export class ForumStatistics {
+async function get_all_messages(channel: Discord.ThreadChannel): Promise<Discord.Message[]> {
+    console.log("loading all messages in " + channel.name)
+    var messages: Discord.Message[] = []
+    let lastMessageId = undefined
+    // +1 represents the first message when the thread was created
+    for (let i = 0; i < channel.messages.cache.size + 1; i += 10) {
+        messages.push(...((await channel.messages.fetch({ limit: 10, before: lastMessageId })).map(m => m)))
+        lastMessageId = messages[messages.length - 1].id
+    }
+    return messages
+}
+
+class ForumStatistics {
     token: string;
     forumChannelIds: string[];
     botchannelId: string;
@@ -113,3 +124,22 @@ export class ForumStatistics {
 
 }
 
+
+// new ForumStatistics(
+//     process.env.TESTBOT_TOKEN!,
+//     [process.env.TESTGUILD_FORUMCHANNELID!],
+//     process.env.TESTGUILD_BOTCHANNELID!
+// ).run(true)
+
+
+new ForumStatistics(
+    process.env.OUCC_ECHAN_TOKEN!,
+    [
+        process.env.OUCC_PROJECT_FORUMCHANNELID!,
+        process.env.OUCC_SHARE_FORUMCHANNELID!,
+        process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
+    ],
+    process.env.OUCC_BOTCHANNELID!
+).run()
+
+console.log("ForumStatistics is Active!")
