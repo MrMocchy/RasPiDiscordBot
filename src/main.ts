@@ -8,10 +8,10 @@ const { ForumStatistics } = require("./ForumStatistics")
 //     process.env.TESTBOT_TOKEN!,
 //     [process.env.TESTGUILD_FORUMCHANNELID!],
 //     process.env.TESTGUILD_BOTCHANNELID!
-// ).run()
+// ).run(true)
 
 
-const forumStatisticsJob = schedule.scheduleJob("0 18 * * 6", () => {
+schedule.scheduleJob("55 17 * * 6", async () => {
     new ForumStatistics(
         process.env.OUCC_ECHAN_TOKEN!,
         [

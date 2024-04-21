@@ -1,6 +1,8 @@
 
 import Discord from "discord.js"
+import fs from "fs"
 
+const schedule = require("node-schedule")
 const {get_all_messages} = require("./bot_utils")
 
 export class ForumStatistics {
@@ -8,6 +10,7 @@ export class ForumStatistics {
     forumChannelIds: string[];
     botchannelId: string;
     client: Discord.Client;
+    debug: boolean = false;
     
     constructor(token: string, forumChannelIds: string[], botChannelId:string) {
 
@@ -18,16 +21,20 @@ export class ForumStatistics {
         this.client = new Discord.Client({ intents: [Discord.GatewayIntentBits.Guilds] })
 
         this.client.once(Discord.Events.ClientReady, readyClient => {
+            // console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 
             (async () => {
                 const statistics_data = await this.create_statistics();
                 // console.dir(statistics_data, { depth: null });
                 const embed = this.create_embed(statistics_data);
                 // console.dir(embed, { depth: null });
-                await this.send_embed(embed);
+                if (this.debug) {
+                    await this.send_embed(embed);
+                }
+                schedule.scheduleJob("0 18 * * 6", async () => {
+                    await this.send_embed(embed);
+                })
             })();
-
-            console.log(`Ready! Logged in as ${readyClient.user.tag}`);
         })
     }
 
@@ -46,6 +53,9 @@ export class ForumStatistics {
             for (const [snowflake, thread] of channel.threads.cache) {
                 const allMessages:Discord.Message[] = await get_all_messages(thread)
                 const weekMessages = allMessages.filter(message => message.createdTimestamp > Date.now() - 7 * 24 * 60 * 60 * 1000)
+                if (weekMessages.length === 0) {
+                    continue
+                }
                 
                 const threadData: Record < string, Record < string, number >> = {
                     counts: {
@@ -60,7 +70,9 @@ export class ForumStatistics {
 
                 channelData[thread.name] = threadData
             }
-            data[channel.name] = channelData
+            if (Object.keys(channelData).length > 0) {
+                data[channel.name] = channelData
+            }
         }
 
         return data
@@ -68,15 +80,15 @@ export class ForumStatistics {
 
     create_embed(data: Record<string,Record<string, Record<string, Record<string, number>>>>) {
         const embed = new Discord.EmbedBuilder()
-            .setTitle("📊Forum Statistics📊")
+            .setTitle("📊 Forum Statistics 📊")
             .setColor("#0000ff")
 
         for (const [channelName, threads] of Object.entries(data)) {
             embed.addFields([{ name: channelName, value: " ", inline: false }]);
             for (const [threadName, threadData] of Object.entries(threads)) {
                 let value = ""
-                value += `Message Count: ${threadData.counts.week}/${threadData.counts.all}\n`
-                value += `Letter Count: ${threadData.letters.week}/${threadData.letters.all}\n`
+                value += `メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`
+                value += `文字数: ${threadData.letters.week}/${threadData.letters.all}\n`
                 embed.addFields({ name: threadName, value: value, inline: true });
             }
         }
@@ -86,11 +98,16 @@ export class ForumStatistics {
 
     async send_embed(embed:Discord.EmbedBuilder) {
         const channel = await this.client.channels.cache.get(this.botchannelId) as Discord.BaseGuildTextChannel
-        console.dir(embed, { depth: null });
-        // await channel.send({ embeds: [embed] })
+        if (this.debug) {
+            console.dir(embed, { depth: null });
+        } else {
+            const content = fs.readFileSync("./ForumStatisticsMessageContent.txt").toString()
+            await channel.send({content:content, embeds: [embed] })
+        }
     }
 
-    run() {
+    run(debug = false) {
+        this.debug = debug;
         this.client.login(this.token);
     }
 

@@ -5,7 +5,7 @@ import Discord from 'discord.js'
 
 // return: [Discord.Message] (order : new -> old)
 export async function get_all_messages(channel: Discord.ThreadChannel): Promise<Discord.Message[]>{
-    // console.log(channel)
+    console.log("loading all messages in "+channel.name)
     var messages: Discord.Message[] = []
     let lastMessageId = undefined
     // +1 represents the first message when the thread was created
