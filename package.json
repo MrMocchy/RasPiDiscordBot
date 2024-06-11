@@ -1,9 +1,11 @@
 {
   "scripts": {
     "test": "ts-node src/main.ts",
-    "start": "node --env-file=.env build/main.js",
-    "compile": "tsc -p .",
-    "run": "npm run compile && npm start"
+    "start": "node --env-file=.env ./${npm_config_dir}/${npm_config_dir}.js",
+    "compile": "tsc -p ./$npm_config_dir",
+    "run": "npm run compile -- ${npm_config_dir} && npm start -- ${npm_config_dir}",
+    "tsc": "./node_modules/.bin/tsc -p ",
+    "node": "node --env-file=.env "
   },
   "devDependencies": {
     "@types/node": "^20.12.5",

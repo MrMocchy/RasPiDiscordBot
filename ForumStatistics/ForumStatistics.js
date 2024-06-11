@@ -45,9 +45,13 @@ class ForumStatistics {
                 if (this.debug) {
                     yield this.send_embed(embed);
                 }
-                schedule.scheduleJob("0 18 * * 6", () => __awaiter(this, void 0, void 0, function* () {
-                    yield this.send_embed(embed);
-                }));
+                else {
+                    console.log("Waiting for the scheduled time...");
+                    schedule.scheduleJob("0 18 * * 6", () => __awaiter(this, void 0, void 0, function* () {
+                        yield this.send_embed(embed);
+                        console.log("Sent the statistics!");
+                    }));
+                }
             }))();
         });
     }
@@ -103,12 +107,13 @@ class ForumStatistics {
     send_embed(embed) {
         return __awaiter(this, void 0, void 0, function* () {
             const channel = yield this.client.channels.cache.get(this.botchannelId);
+            const content = fs_1.default.readFileSync("./ForumStatistics/MessageContent.txt").toString();
+            const message = { content: content, embeds: [embed] };
             if (this.debug) {
-                console.dir(embed, { depth: null });
+                console.dir(message, { depth: null });
             }
             else {
-                const content = fs_1.default.readFileSync("./ForumStatisticsMessageContent.txt").toString();
-                yield channel.send({ content: content, embeds: [embed] });
+                yield channel.send(message);
             }
         });
     }
@@ -122,9 +127,11 @@ class ForumStatistics {
 //     [process.env.TESTGUILD_FORUMCHANNELID!],
 //     process.env.TESTGUILD_BOTCHANNELID!
 // ).run(true)
-new ForumStatistics(process.env.OUCC_ECHAN_TOKEN, [
-    process.env.OUCC_PROJECT_FORUMCHANNELID,
-    process.env.OUCC_SHARE_FORUMCHANNELID,
-    process.env.OUCC_OFFTOPIC_FORUMCHANNELID,
-], process.env.OUCC_BOTCHANNELID).run();
-console.log("ForumStatistics is Active!");
+schedule.scheduleJob("55 17 * * 6", () => __awaiter(void 0, void 0, void 0, function* () {
+    new ForumStatistics(process.env.OUCC_ECHAN_TOKEN, [
+        process.env.OUCC_PROJECT_FORUMCHANNELID,
+        process.env.OUCC_SHARE_FORUMCHANNELID,
+        process.env.OUCC_OFFTOPIC_FORUMCHANNELID,
+    ], process.env.OUCC_BOTCHANNELID).run();
+    console.log("ForumStatistics is Active!");
+}));

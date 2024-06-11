@@ -41,10 +41,13 @@ class ForumStatistics {
                 // console.dir(embed, { depth: null });
                 if (this.debug) {
                     await this.send_embed(embed);
+                } else {
+                    console.log("Waiting for the scheduled time...")
+                    schedule.scheduleJob("0 18 * * 6", async () => {
+                        await this.send_embed(embed);
+                        console.log("Sent the statistics!")
+                    })
                 }
-                schedule.scheduleJob("0 18 * * 6", async () => {
-                    await this.send_embed(embed);
-                })
             })();
         })
     }
@@ -109,11 +112,12 @@ class ForumStatistics {
 
     async send_embed(embed:Discord.EmbedBuilder) {
         const channel = await this.client.channels.cache.get(this.botchannelId) as Discord.BaseGuildTextChannel
+        const content = fs.readFileSync("./ForumStatistics/MessageContent.txt").toString()
+        const message = {content:content, embeds: [embed] }
         if (this.debug) {
-            console.dir(embed, { depth: null });
+            console.dir(message, { depth: null });
         } else {
-            const content = fs.readFileSync("./ForumStatisticsMessageContent.txt").toString()
-            await channel.send({content:content, embeds: [embed] })
+            await channel.send(message)
         }
     }
 
@@ -131,15 +135,17 @@ class ForumStatistics {
 //     process.env.TESTGUILD_BOTCHANNELID!
 // ).run(true)
 
+schedule.scheduleJob("55 17 * * 6", async () => {
+   new ForumStatistics(
+       process.env.OUCC_ECHAN_TOKEN!,
+       [
+           process.env.OUCC_PROJECT_FORUMCHANNELID!,
+           process.env.OUCC_SHARE_FORUMCHANNELID!,
+           process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
+       ],
+       process.env.OUCC_BOTCHANNELID!
+   ).run()
 
-new ForumStatistics(
-    process.env.OUCC_ECHAN_TOKEN!,
-    [
-        process.env.OUCC_PROJECT_FORUMCHANNELID!,
-        process.env.OUCC_SHARE_FORUMCHANNELID!,
-        process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
-    ],
-    process.env.OUCC_BOTCHANNELID!
-).run()
+   console.log("ForumStatistics is Active!")
+})
 
-console.log("ForumStatistics is Active!")
