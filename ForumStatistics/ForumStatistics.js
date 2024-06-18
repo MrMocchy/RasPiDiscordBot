@@ -37,22 +37,21 @@ class ForumStatistics {
         this.client = new discord_js_1.default.Client({ intents: [discord_js_1.default.GatewayIntentBits.Guilds] });
         this.client.once(discord_js_1.default.Events.ClientReady, readyClient => {
             // console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-            (() => __awaiter(this, void 0, void 0, function* () {
+            schedule.scheduleJob("53 13 * * *", () => __awaiter(this, void 0, void 0, function* () {
+                console.log(new Date());
+                console.log("Scheduled time has come!");
                 const statistics_data = yield this.create_statistics();
-                // console.dir(statistics_data, { depth: null });
                 const embed = this.create_embed(statistics_data);
-                // console.dir(embed, { depth: null });
-                if (this.debug) {
-                    yield this.send_embed(embed);
-                }
-                else {
-                    console.log("Waiting for the scheduled time...");
-                    schedule.scheduleJob("0 18 * * 6", () => __awaiter(this, void 0, void 0, function* () {
-                        yield this.send_embed(embed);
-                        console.log("Sent the statistics!");
-                    }));
-                }
-            }))();
+                const date_now = new Date();
+                const date_send = new Date(date_now.getFullYear(), date_now.getMonth(), date_now.getDate(), 18, 0, 1, 0);
+                const wait_time = (date_send.getTime() - date_now.getTime()) / 1000;
+                console.log(date_now);
+                console.log(`Waiting ${wait_time} seconds for the scheduled time...`);
+                yield new Promise(resolve => setTimeout(resolve, wait_time * 1000));
+                console.log(new Date());
+                yield this.send_embed(embed);
+                console.log("Sent the statistics!");
+            }));
         });
     }
     count_letters(messages) {
@@ -127,11 +126,14 @@ class ForumStatistics {
 //     [process.env.TESTGUILD_FORUMCHANNELID!],
 //     process.env.TESTGUILD_BOTCHANNELID!
 // ).run(true)
-schedule.scheduleJob("55 17 * * 6", () => __awaiter(void 0, void 0, void 0, function* () {
-    new ForumStatistics(process.env.OUCC_ECHAN_TOKEN, [
-        process.env.OUCC_PROJECT_FORUMCHANNELID,
-        process.env.OUCC_SHARE_FORUMCHANNELID,
-        process.env.OUCC_OFFTOPIC_FORUMCHANNELID,
-    ], process.env.OUCC_BOTCHANNELID).run();
-    console.log("ForumStatistics is Active!");
-}));
+new ForumStatistics(
+//    process.env.OUCC_ECHAN_TOKEN!,
+process.env.TEST_BOT_TOKEN, [
+    //    process.env.OUCC_PROJECT_FORUMCHANNELID!,
+    //    process.env.OUCC_SHARE_FORUMCHANNELID!,
+    //    process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
+    process.env.TEST_FORUMCHANNELID
+], 
+//    process.env.OUCC_BOTCHANNELID!
+process.env.TEST_BOTCHANNELID).run(true);
+console.log("ForumStatistics is Active!");

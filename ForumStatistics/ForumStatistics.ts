@@ -1,4 +1,5 @@
 
+import { debug } from "console"
 import Discord from "discord.js"
 import fs from "fs"
 
@@ -34,21 +35,23 @@ class ForumStatistics {
         this.client.once(Discord.Events.ClientReady, readyClient => {
             // console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 
-            (async () => {
+            schedule.scheduleJob("55 17 * * 6", async () => {
+                console.log(new Date())
+                console.log("Scheduled time has come!")
                 const statistics_data = await this.create_statistics();
-                // console.dir(statistics_data, { depth: null });
                 const embed = this.create_embed(statistics_data);
-                // console.dir(embed, { depth: null });
-                if (this.debug) {
-                    await this.send_embed(embed);
-                } else {
-                    console.log("Waiting for the scheduled time...")
-                    schedule.scheduleJob("0 18 * * 6", async () => {
-                        await this.send_embed(embed);
-                        console.log("Sent the statistics!")
-                    })
-                }
-            })();
+                
+                const date_now = new Date();
+                const date_send = new Date(date_now.getFullYear(), date_now.getMonth(), date_now.getDate(), 18, 0, 1, 0);
+                const wait_time = (date_send.getTime() - date_now.getTime()) / 1000;
+                console.log(date_now)
+                console.log(`Waiting ${wait_time} seconds for the scheduled time...`)
+                await new Promise(resolve => setTimeout(resolve, wait_time * 1000));
+                
+                console.log(new Date())
+                await this.send_embed(embed);
+                console.log("Sent the statistics!")
+            })
         })
     }
 
@@ -135,17 +138,15 @@ class ForumStatistics {
 //     process.env.TESTGUILD_BOTCHANNELID!
 // ).run(true)
 
-schedule.scheduleJob("55 17 * * 6", async () => {
-   new ForumStatistics(
-       process.env.OUCC_ECHAN_TOKEN!,
-       [
-           process.env.OUCC_PROJECT_FORUMCHANNELID!,
-           process.env.OUCC_SHARE_FORUMCHANNELID!,
-           process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
-       ],
-       process.env.OUCC_BOTCHANNELID!
-   ).run()
+new ForumStatistics(
+    process.env.OUCC_ECHAN_TOKEN!,
+    [
+        process.env.OUCC_PROJECT_FORUMCHANNELID!,
+        process.env.OUCC_SHARE_FORUMCHANNELID!,
+        process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
+    ],
+    process.env.OUCC_BOTCHANNELID!
+).run()
 
-   console.log("ForumStatistics is Active!")
-})
+console.log("ForumStatistics is Active!")
 
