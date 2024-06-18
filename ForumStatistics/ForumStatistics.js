@@ -37,7 +37,7 @@ class ForumStatistics {
         this.client = new discord_js_1.default.Client({ intents: [discord_js_1.default.GatewayIntentBits.Guilds] });
         this.client.once(discord_js_1.default.Events.ClientReady, readyClient => {
             // console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-            schedule.scheduleJob("53 13 * * *", () => __awaiter(this, void 0, void 0, function* () {
+            schedule.scheduleJob("55 17 * * 6", () => __awaiter(this, void 0, void 0, function* () {
                 console.log(new Date());
                 console.log("Scheduled time has come!");
                 const statistics_data = yield this.create_statistics();
@@ -53,6 +53,20 @@ class ForumStatistics {
                 console.log("Sent the statistics!");
             }));
         });
+        this.client.on(discord_js_1.default.Events.InteractionCreate, (interaction) => __awaiter(this, void 0, void 0, function* () {
+            // console.log(interaction)
+            if (interaction.isButton() && interaction.customId == "ForumStatisticsMessageEditButton") {
+                this.on_message_edit_button(interaction);
+            }
+            if (interaction.isModalSubmit() && interaction.customId == "ForumStatisticsMessageEditModal") {
+                this.on_message_edit_modal_submit(interaction);
+            }
+        }));
+        // Send Message Edit Button
+        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+            yield this.send_edit_button();
+            console.log("Sent the edit button!");
+        }), 5000);
     }
     count_letters(messages) {
         return messages.reduce((acc, message) => acc + message.content.length, 0);
@@ -116,24 +130,71 @@ class ForumStatistics {
             }
         });
     }
+    send_edit_button() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const channel = yield this.client.channels.cache.get(this.botchannelId);
+            const button = new discord_js_1.default.ButtonBuilder()
+                .setLabel("メッセージを編集")
+                .setEmoji("📝")
+                .setStyle(discord_js_1.default.ButtonStyle.Primary)
+                .setCustomId("ForumStatisticsMessageEditButton");
+            yield channel.send({
+                content: "ForumStatistics でなにを言うか、毎週悩んでるんだ。\nいつも定型文ってのも味気ないしね。\n次回になんて言うか、だれか教えて！",
+                components: [new discord_js_1.default.ActionRowBuilder().addComponents(button)]
+            });
+        });
+    }
+    on_message_edit_button(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (interaction.isButton()) {
+                // console.log("Edit Button Clicked!")
+                const currentMessage = fs_1.default.readFileSync("./ForumStatistics/MessageContent.txt").toString();
+                const text = new discord_js_1.default.TextInputBuilder()
+                    .setLabel("公序良俗に反することを E-chan に言わせないでください。")
+                    .setCustomId("ForumStatisticsMessageEditText")
+                    .setPlaceholder("Edit the message")
+                    .setStyle(discord_js_1.default.TextInputStyle.Paragraph)
+                    .setValue(currentMessage)
+                    .setRequired(true);
+                // console.log("text created")
+                const row = new discord_js_1.default.ActionRowBuilder()
+                    .addComponents(text);
+                // console.log("row created")
+                const modal = new discord_js_1.default.ModalBuilder()
+                    .setTitle("次回のメッセージを教えて！")
+                    .setCustomId("ForumStatisticsMessageEditModal")
+                    .setComponents(row);
+                // console.log("modal created")
+                yield interaction.showModal(modal);
+                console.log("\x1b[34m" + interaction.user.displayName + "\x1b[0m Showed Message Edit Modal!");
+            }
+        });
+    }
+    on_message_edit_modal_submit(interaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (interaction.isModalSubmit()) {
+                console.log("\x1b[34m" + interaction.user.displayName + "\x1b[0m Submitted Message Edit Modal!");
+                const content = interaction.components[0].components[0].value;
+                console.log("\x1b[34m" + interaction.user.displayName + "\x1b[0m Changed the message to:");
+                console.log("\x1b[32m" + content + "\x1b[0m");
+                fs_1.default.writeFileSync("./ForumStatistics/MessageContent.txt", content);
+                yield interaction.reply("ありがとう！次回はそう言うね！");
+            }
+        });
+    }
     run(debug = false) {
         this.debug = debug;
         this.client.login(this.token);
     }
 }
+new ForumStatistics(process.env.TESTBOT_TOKEN, [process.env.TESTGUILD_FORUMCHANNELID], process.env.TESTGUILD_BOTCHANNELID).run(true);
 // new ForumStatistics(
-//     process.env.TESTBOT_TOKEN!,
-//     [process.env.TESTGUILD_FORUMCHANNELID!],
-//     process.env.TESTGUILD_BOTCHANNELID!
-// ).run(true)
-new ForumStatistics(
-//    process.env.OUCC_ECHAN_TOKEN!,
-process.env.TEST_BOT_TOKEN, [
-    //    process.env.OUCC_PROJECT_FORUMCHANNELID!,
-    //    process.env.OUCC_SHARE_FORUMCHANNELID!,
-    //    process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
-    process.env.TEST_FORUMCHANNELID
-], 
-//    process.env.OUCC_BOTCHANNELID!
-process.env.TEST_BOTCHANNELID).run(true);
+//     process.env.OUCC_ECHAN_TOKEN!,
+//     [
+//         process.env.OUCC_PROJECT_FORUMCHANNELID!,
+//         process.env.OUCC_SHARE_FORUMCHANNELID!,
+//         process.env.OUCC_OFFTOPIC_FORUMCHANNELID!,
+//     ],
+//     process.env.OUCC_BOTCHANNELID!
+// ).run()
 console.log("ForumStatistics is Active!");
