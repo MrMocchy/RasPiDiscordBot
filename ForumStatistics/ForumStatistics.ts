@@ -122,7 +122,9 @@ class ForumStatistics {
                 let value = ""
                 value += `メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`
                 value += `文字数: ${threadData.letters.week}/${threadData.letters.all}\n`
-                embed.addFields({ name: threadName, value: value, inline: true });
+                let threadNameLabel = threadName;
+                if (threadData.counts.week==threadData.counts.all) threadNameLabel = "🆕 "+threadNameLabel;
+                embed.addFields({ name: threadNameLabel, value: value, inline: true });
             }
         }
         
