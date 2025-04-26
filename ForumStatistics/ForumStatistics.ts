@@ -23,6 +23,7 @@ class ForumStatistics {
     botchannelId: string;
     client: Discord.Client;
     debug: boolean = false;
+    send_now: boolean = false;
     
     constructor(token: string, forumChannelIds: string[], botChannelId:string) {
 
@@ -35,23 +36,8 @@ class ForumStatistics {
         this.client.once(Discord.Events.ClientReady, readyClient => {
             // console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 
-            schedule.scheduleJob("55 17 * * 6", async () => {
-                console.log(new Date())
-                console.log("Scheduled time has come!")
-                const statistics_data = await this.create_statistics();
-                const embed = this.create_embed(statistics_data);
-                
-                const date_now = new Date();
-                const date_send = new Date(date_now.getFullYear(), date_now.getMonth(), date_now.getDate(), 18, 0, 1, 0);
-                const wait_time = (date_send.getTime() - date_now.getTime()) / 1000;
-                console.log(date_now)
-                console.log(`Waiting ${wait_time} seconds for the scheduled time...`)
-                await new Promise(resolve => setTimeout(resolve, wait_time * 1000));
-                
-                console.log(new Date())
-                await this.send_embed(embed);
-                console.log("Sent the statistics!")
-            })
+            if (this.send_now) this.main()
+            else schedule.scheduleJob("55 17 * * 6", this.main)
         })
         
         this.client.on(Discord.Events.InteractionCreate, async interaction => {
@@ -71,6 +57,23 @@ class ForumStatistics {
         // }, 5000)
     }
 
+    async main(){
+        console.log(new Date())
+        console.log("Scheduled time has come!")
+        const statistics_data = await this.create_statistics();
+        const embed = this.create_embed(statistics_data);
+        
+        const date_now = new Date();
+        const date_send = new Date(date_now.getFullYear(), date_now.getMonth(), date_now.getDate(), 18, 0, 1, 0);
+        const wait_time = (date_send.getTime() - date_now.getTime()) / 1000;
+        console.log(date_now)
+        console.log(`Waiting ${wait_time} seconds for the scheduled time...`)
+        await new Promise(resolve => setTimeout(resolve, wait_time * 1000));
+        
+        console.log(new Date())
+        await this.send_embed(embed);
+        console.log("Sent the statistics!")
+    }
 
     count_letters(messages: Discord.Message[]) {
         return messages.reduce((acc:number, message:Discord.Message) => acc + message.content.length, 0)
@@ -137,7 +140,8 @@ class ForumStatistics {
         const message = {content:content, embeds: [embed] }
         if (this.debug) {
             console.dir(message, { depth: null });
-        } else {
+        }
+        if (this.send_now || ! this.debug) {
             await channel.send(message)
         }
     }
@@ -192,8 +196,9 @@ class ForumStatistics {
         }
     }
     
-    run(debug = false) {
+    run(debug = false, send_now = false) {
         this.debug = debug;
+        this.send_now = send_now;
         this.client.login(this.token);
     }
 
@@ -204,7 +209,7 @@ class ForumStatistics {
 //     process.env.TESTBOT_TOKEN!,
 //     [process.env.TESTGUILD_FORUMCHANNELID!],
 //     process.env.TESTGUILD_BOTCHANNELID!
-// ).run(true)
+// ).run(true, true)
 
 new ForumStatistics(
     process.env.OUCC_ECHAN_TOKEN!,
