@@ -104,10 +104,10 @@ class ForumStatistics {
                     }
                 }
 
-                channelData[thread.name] = threadData
+                channelData[thread.url] = threadData
             }
             if (Object.keys(channelData).length > 0) {
-                data[channel.name] = channelData
+                data[channel.url] = channelData
             }
         }
 
@@ -123,8 +123,8 @@ class ForumStatistics {
             embed.addFields([{ name: channelName, value: " ", inline: false }]);
             for (const [threadName, threadData] of Object.entries(threads)) {
                 let value = ""
-                value += `メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`
-                value += `文字数: ${threadData.letters.week}/${threadData.letters.all}\n`
+                value += `┣メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`
+                value += `┗文字数: ${threadData.letters.week}/${threadData.letters.all}\n`
                 let threadNameLabel = threadName;
                 if (threadData.counts.week==threadData.counts.all) threadNameLabel = "🆕 "+threadNameLabel;
                 embed.addFields({ name: threadNameLabel, value: value, inline: true });
