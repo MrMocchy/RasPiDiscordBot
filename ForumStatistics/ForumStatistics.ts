@@ -23,6 +23,7 @@ class ForumStatistics {
     botchannelId: string;
     client: Discord.Client;
     debug: boolean = false;
+    create_now: boolean = false;
     send_now: boolean = false;
     
     constructor(token: string, forumChannelIds: string[], botChannelId:string) {
@@ -36,7 +37,7 @@ class ForumStatistics {
         this.client.once(Discord.Events.ClientReady, readyClient => {
             // console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 
-            if (this.send_now) this.main()
+            if (this.create_now || this.send_now) this.main()
             else schedule.scheduleJob("55 17 * * 6", this.main)
         })
         
@@ -123,9 +124,9 @@ class ForumStatistics {
             embed.addFields([{ name: channelName, value: " ", inline: false }]);
             for (const [threadName, threadData] of Object.entries(threads)) {
                 let value = ""
-                value += `┣メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`
-                value += `┗文字数: ${threadData.letters.week}/${threadData.letters.all}\n`
-                let threadNameLabel = threadName;
+                + `　┣メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`
+                + `　┗文字数: ${threadData.letters.week}/${threadData.letters.all}\n`
+                let threadNameLabel = "┗"+threadName;
                 if (threadData.counts.week==threadData.counts.all) threadNameLabel = "🆕 "+threadNameLabel;
                 embed.addFields({ name: threadNameLabel, value: value, inline: true });
             }
@@ -141,7 +142,7 @@ class ForumStatistics {
         if (this.debug) {
             console.dir(message, { depth: null });
         }
-        if (this.send_now || ! this.debug) {
+        if (! this.debug || this.send_now) {
             await channel.send(message)
         }
     }
@@ -196,8 +197,9 @@ class ForumStatistics {
         }
     }
     
-    run(debug = false, send_now = false) {
+    run(debug = false, create_now = false, send_now = false) {
         this.debug = debug;
+        this.create_now = create_now;
         this.send_now = send_now;
         this.client.login(this.token);
     }
@@ -209,7 +211,7 @@ class ForumStatistics {
 //     process.env.TESTBOT_TOKEN!,
 //     [process.env.TESTGUILD_FORUMCHANNELID!],
 //     process.env.TESTGUILD_BOTCHANNELID!
-// ).run(true, true)
+// ).run(true, true, false)
 
 new ForumStatistics(
     process.env.OUCC_ECHAN_TOKEN!,

@@ -31,6 +31,7 @@ function get_all_messages(channel) {
 class ForumStatistics {
     constructor(token, forumChannelIds, botChannelId) {
         this.debug = false;
+        this.create_now = false;
         this.send_now = false;
         this.token = token;
         this.forumChannelIds = forumChannelIds;
@@ -38,7 +39,7 @@ class ForumStatistics {
         this.client = new discord_js_1.default.Client({ intents: [discord_js_1.default.GatewayIntentBits.Guilds] });
         this.client.once(discord_js_1.default.Events.ClientReady, readyClient => {
             // console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-            if (this.send_now)
+            if (this.create_now || this.send_now)
                 this.main();
             else
                 schedule.scheduleJob("55 17 * * 6", this.main);
@@ -116,10 +117,10 @@ class ForumStatistics {
         for (const [channelName, threads] of Object.entries(data)) {
             embed.addFields([{ name: channelName, value: " ", inline: false }]);
             for (const [threadName, threadData] of Object.entries(threads)) {
-                let value = "";
-                value += `┣メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`;
-                value += `┗文字数: ${threadData.letters.week}/${threadData.letters.all}\n`;
-                let threadNameLabel = threadName;
+                let value = ""
+                    + `　┣メッセージ数: ${threadData.counts.week}/${threadData.counts.all}\n`
+                    + `　┗文字数: ${threadData.letters.week}/${threadData.letters.all}\n`;
+                let threadNameLabel = "┗" + threadName;
                 if (threadData.counts.week == threadData.counts.all)
                     threadNameLabel = "🆕 " + threadNameLabel;
                 embed.addFields({ name: threadNameLabel, value: value, inline: true });
@@ -135,7 +136,7 @@ class ForumStatistics {
             if (this.debug) {
                 console.dir(message, { depth: null });
             }
-            if (this.send_now || !this.debug) {
+            if (!this.debug || this.send_now) {
                 yield channel.send(message);
             }
         });
@@ -192,8 +193,9 @@ class ForumStatistics {
             }
         });
     }
-    run(debug = false, send_now = false) {
+    run(debug = false, create_now = false, send_now = false) {
         this.debug = debug;
+        this.create_now = create_now;
         this.send_now = send_now;
         this.client.login(this.token);
     }
@@ -202,7 +204,7 @@ class ForumStatistics {
 //     process.env.TESTBOT_TOKEN!,
 //     [process.env.TESTGUILD_FORUMCHANNELID!],
 //     process.env.TESTGUILD_BOTCHANNELID!
-// ).run(true, true)
+// ).run(true, true, false)
 new ForumStatistics(process.env.OUCC_ECHAN_TOKEN, [
     process.env.OUCC_PROJECT_FORUMCHANNELID,
     process.env.OUCC_SHARE_FORUMCHANNELID,
